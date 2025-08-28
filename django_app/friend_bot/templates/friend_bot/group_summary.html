@@ -1,0 +1,294 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Резюме активности - {{ group.title }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .summary-form {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .form-group input[type="datetime-local"] {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 250px;
+    }
+    .quick-select {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f0f0f0;
+        border-radius: 4px;
+    }
+    .quick-btn {
+        background: #6c757d;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+        font-size: 13px;
+    }
+    .quick-btn:hover {
+        background: #5a6268;
+    }
+    .submit-btn {
+        background: #79aec8;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .submit-btn:hover {
+        background: #417690;
+    }
+    .info-box {
+        background: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+    .test-section {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+    .test-section h3 {
+        color: #856404;
+        margin-top: 0;
+    }
+    .test-btn {
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .test-btn:hover {
+        background: #218838;
+    }
+    .test-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+    .prompt-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>📊 Резюме активности группы "{{ group.title }}"</h1>
+    
+    <div class="info-box">
+        <h3>ℹ️ Информация о группе</h3>
+        <p><strong>ID в Telegram:</strong> {{ group.telegram_id }}</p>
+        <p><strong>Статус:</strong> {% if group.is_active %}✅ Активна{% else %}❌ Неактивна{% endif %}</p>
+        <p><strong>Участников:</strong> {{ group.useringroup_set.count }}</p>
+        <p><strong>Всего сообщений в группе:</strong> {{ group.message_set.count }}</p>
+    </div>
+    
+    <div class="prompt-section">
+        <h3>🤖 Промпт для AI</h3>
+        <div class="form-group">
+            <label for="ai_prompt">Промпт для генерации резюме (можно отредактировать):</label>
+            <textarea id="ai_prompt" name="ai_prompt" rows="8" style="width: 100%; font-family: monospace; font-size: 12px;">Ты - друг, который следил за чатом в группе "{{ group.title }}" и теперь рассказывает другому другу, что он пропустил.
+
+Твой стиль - это дружеская беседа за пивом, живая, эмоциональная, с шутками и личными комментариями.
+
+Создай живое резюме в HTML-разметке, которое включает:
+1. Основные темы обсуждений (2-3 главные темы с эмоциями)
+2. Самые активные участники (с личными комментариями)
+3. Интересные моменты или цитаты (если есть)
+4. Эмоциональное завершение
+
+Правила стиля:
+- НЕ НАЧИНАЙ с приветствия - сразу переходи к делу
+- Обращайся к участникам во множественном числе: "ребятки", "братишки", "сестренки", "ребятушки", "друзья", "товарищи"
+- Пиши как друг рассказывает другу: "блин, здарова", "так, ребятки", "ну это никуда не годится"
+- Используй разговорную речь, междометия, эмоции
+- Комментируй активность: "обсусситесь", "запасайтесь попкорном", "плачущий ребенок и никаких сплетен??"
+- Используй только базовые HTML-теги: <b>, <i>, <u>
+- НЕ используй сложные теги: <pre>, <ul>, <li>, <code>
+- Простая разметка для лучшей совместимости с Telegram
+- При поздравлениях обращайся через ники (@username)
+- При повествовании используй имена (Иван, Мария)
+- Цифры упоминай только если они выдающиеся/интересные
+- БЕЗ лишних отступов и пустых строк - пиши компактно
+- Добавляй <tg-spoiler></tg-spoiler> для интересных фактов
+- Обязательно используй ссылки на сообщения когда рассказываешь о темах или цитатах в формате специальном телеграммном, ссылки оформляй тегом <a href="https://t.me/c/{chat_id_clean}/{msg.telegram_id}">ссылка</a>
+
+ОГРАНИЧЕНИЯ:
+- Максимальная длина сообщения: 3500 символов (для Telegram)
+- Избегай длинных абзацев - разбивай на короткие
+- Без лишних HTML-тегов - только необходимые
+- Компактный формат без пустых строк</textarea>
+        </div>
+    </div>
+    
+    <div class="summary-form">
+        <h3>📅 Выберите период для анализа</h3>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" id="custom_prompt" name="custom_prompt">
+            <div class="form-group">
+                <label for="start_datetime">Начало периода:</label>
+                <input type="datetime-local" id="start_datetime" name="start_datetime" required>
+            </div>
+            <div class="form-group">
+                <label for="end_datetime">Конец периода:</label>
+                <input type="datetime-local" id="end_datetime" name="end_datetime" required>
+            </div>
+            <button type="submit" class="submit-btn" onclick="updateCustomPrompt()">🚀 Создать резюме</button>
+        </form>
+        
+        <div class="quick-select">
+            <h4>⚡ Быстрый выбор:</h4>
+            <button type="button" onclick="setLastDay()" class="quick-btn">Последние сутки</button>
+            <button type="button" onclick="setLastWeek()" class="quick-btn">Последняя неделя</button>
+            <button type="button" onclick="setLastMonth()" class="quick-btn">Последний месяц</button>
+        </div>
+    </div>
+    
+    <!-- Тестовая секция для отправки сообщений -->
+    <div class="test-section">
+        <h3>🧪 Тестовая отправка в Telegram</h3>
+        <div class="form-group">
+            <label for="test_message">Текст сообщения для отправки:</label>
+            <textarea id="test_message" name="test_message" rows="4" placeholder="Введите текст сообщения для тестирования...">Привет! Это тестовое сообщение из Django админки.</textarea>
+        </div>
+        <button type="button" onclick="sendTestMessage()" class="test-btn">📱 Отправить тест в Telegram</button>
+        <div id="test-status" style="margin-top: 10px;"></div>
+    </div>
+    
+    <div class="info-box">
+        <h3>💡 Что будет проанализировано:</h3>
+        <ul>
+            <li>Общая активность группы</li>
+            <li>Самые активные участники</li>
+            <li>Основные темы обсуждений</li>
+            <li>Рекомендации по улучшению</li>
+            <li>Статистика по типам сообщений</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Устанавливаем время по умолчанию (последние сутки)
+document.addEventListener('DOMContentLoaded', function() {
+    setLastDay();
+});
+
+function setLastDay() {
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    document.getElementById('end_datetime').value = formatDateTime(now);
+    document.getElementById('start_datetime').value = formatDateTime(yesterday);
+}
+
+function setLastWeek() {
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    document.getElementById('end_datetime').value = formatDateTime(now);
+    document.getElementById('start_datetime').value = formatDateTime(weekAgo);
+}
+
+function setLastMonth() {
+    const now = new Date();
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    document.getElementById('end_datetime').value = formatDateTime(now);
+    document.getElementById('start_datetime').value = formatDateTime(monthAgo);
+}
+
+function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function updateCustomPrompt() {
+    const promptText = document.getElementById('ai_prompt').value;
+    document.getElementById('custom_prompt').value = promptText;
+}
+
+function sendTestMessage() {
+    const button = document.querySelector('.test-btn');
+    const statusDiv = document.getElementById('test-status');
+    const messageText = document.getElementById('test_message').value;
+    
+    if (!messageText.trim()) {
+        statusDiv.innerHTML = '<span style="color: #dc3545;">❌ Введите текст сообщения!</span>';
+        return;
+    }
+    
+    // Отключаем кнопку и показываем статус
+    button.disabled = true;
+    button.textContent = '📤 Отправляется...';
+    statusDiv.innerHTML = '<span style="color: #007bff;">⏳ Отправляем тестовое сообщение в Telegram...</span>';
+    
+    // Получаем данные для отправки
+    const chatId = '{{ group.telegram_id }}';
+    
+    // Отправляем запрос на API
+    fetch('/api/send/message/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            chat_id: chatId,
+            message_text: messageText,
+            auth_token: '{{ auth_token }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'Message sent successfully') {
+            statusDiv.innerHTML = '<span style="color: #28a745;">✅ Тестовое сообщение успешно отправлено в Telegram!</span>';
+            button.textContent = '📱 Отправлено';
+            button.style.background = '#28a745';
+        } else {
+            throw new Error(data.detail || 'Ошибка отправки');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<span style="color: #dc3545;">❌ Ошибка отправки: ' + error.message + '</span>';
+        button.disabled = false;
+        button.textContent = '📱 Отправить тест в Telegram';
+    });
+}
+</script>
+{% endblock %}

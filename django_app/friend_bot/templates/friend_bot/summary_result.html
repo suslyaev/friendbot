@@ -1,0 +1,147 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Результат резюме - {{ group.title }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .summary-result {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    .summary-content {
+        background: white;
+        padding: 20px;
+        border-radius: 4px;
+        border-left: 4px solid #79aec8;
+        margin: 20px 0;
+        white-space: pre-wrap;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        border: 1px solid #ddd;
+        min-height: 200px;
+    }
+    .stats-box {
+        background: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+    .back-btn {
+        background: #79aec8;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 4px;
+        display: inline-block;
+        margin: 10px 0;
+    }
+    .back-btn:hover {
+        background: #417690;
+        color: white;
+        text-decoration: none;
+    }
+    .send-to-telegram {
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin: 10px 10px 10px 0;
+    }
+    .send-to-telegram:hover {
+        background: #218838;
+    }
+    .edit-hint {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #666;
+        background: #fff3cd;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ffeaa7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>📊 Результат резюме группы "{{ group.title }}"</h1>
+    
+    <div class="stats-box">
+        <h3>📈 Статистика анализа</h3>
+        <p><strong>Период:</strong> {{ start_datetime }} - {{ end_datetime }}</p>
+        <p><strong>Проанализировано сообщений:</strong> {{ message_count }}</p>
+        <p><strong>Группа:</strong> {{ group.title }} (ID: {{ group.telegram_id }})</p>
+    </div>
+    
+    <div class="summary-result">
+        <h3>🤖 Резюме от AI</h3>
+        <div class="summary-content" id="summary-content" contenteditable="true">{{ summary|safe }}</div>
+        <div class="edit-hint">
+            💡 <strong>Совет:</strong> Вы можете отредактировать текст выше перед отправкой в Telegram. Просто кликните на текст и внесите изменения.
+        </div>
+    </div>
+    
+    <div class="actions">
+        <a href="{% url 'admin:friend_bot_telegramgroup_change' group.id %}" class="back-btn">← Назад к группе</a>
+        <a href="{% url 'group_summary' group.id %}" class="back-btn">🔄 Новый анализ</a>
+        <button class="send-to-telegram" onclick="sendToTelegram()">📱 Отправить в Telegram</button>
+        <div id="send-status" style="margin-top: 10px;"></div>
+    </div>
+    
+    <!-- CSRF токен для JavaScript -->
+    {% csrf_token %}
+</div>
+
+<script>
+function sendToTelegram() {
+    const button = document.querySelector('.send-to-telegram');
+    const statusDiv = document.getElementById('send-status');
+    
+    // Отключаем кнопку и показываем статус
+    button.disabled = true;
+    button.textContent = '📤 Отправляется...';
+    statusDiv.innerHTML = '<span style="color: #007bff;">⏳ Отправляем резюме в Telegram...</span>';
+    
+    // Получаем данные для отправки (редактированный текст)
+    const chatId = '{{ group.telegram_id }}';
+    const messageText = document.getElementById('summary-content').innerHTML;
+    
+    // Отправляем запрос на API
+    fetch('/api/send/message/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            chat_id: chatId,
+            message_text: messageText,
+            auth_token: '{{ auth_token }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'Message sent successfully') {
+            statusDiv.innerHTML = '<span style="color: #28a745;">✅ Резюме успешно отправлено в Telegram!</span>';
+            button.textContent = '📱 Отправлено';
+            button.style.background = '#28a745';
+        } else {
+            throw new Error(data.detail || 'Ошибка отправки');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<span style="color: #dc3545;">❌ Ошибка отправки: ' + error.message + '</span>';
+        button.disabled = false;
+        button.textContent = '📱 Отправить в Telegram';
+    });
+}
+</script>
+{% endblock %}

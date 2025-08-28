@@ -1,0 +1,8 @@
+# Ignore Python virtual environment
+env/
+.env
+
+# macOS Finder metadata
+.DS_Store
+
+

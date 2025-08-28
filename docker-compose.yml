@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # База данных PostgreSQL
+  postgres:
+    image: postgres:15
+    container_name: friend_bot_postgres
+    environment:
+      POSTGRES_DB: friend_bot
+      POSTGRES_USER: friend_bot_user
+      POSTGRES_PASSWORD: friend_bot_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - friend_bot_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U friend_bot_user -d friend_bot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Django веб-приложение
+  django_app:
+    build: ./django_app
+    container_name: friend_bot_django
+    environment:
+      - DATABASE_URL=postgresql://friend_bot_user:friend_bot_password@postgres:5432/friend_bot
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DEBUG=True
+      - DJANGO_DISABLE_HOST_CHECK=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - friend_bot_network
+    restart: unless-stopped
+
+  # Telegram бот на aiogram
+  telegram_bot:
+    build: ./telegram_bot
+    container_name: friend_bot_telegram
+    environment:
+      - DATABASE_URL=postgresql://friend_bot_user:friend_bot_password@postgres:5432/friend_bot
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJANGO_API_URL=http://host.docker.internal:8000/api/ingest/message/
+      - INGEST_TOKEN=${DJANGO_SECRET_KEY}
+    depends_on:
+      - postgres
+      - django_app
+    networks:
+      - friend_bot_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  friend_bot_network:
+    driver: bridge
