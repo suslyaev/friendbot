@@ -50,7 +50,8 @@ services:
       - DATABASE_URL=postgresql://friend_bot_user:friend_bot_password@postgres:5432/friend_bot
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DJANGO_API_URL=http://host.docker.internal:8000/api/ingest/message/
+      - DJANGO_HOST=${DJANGO_HOST:-django_app}
+      - DJANGO_API_URL=http://${DJANGO_HOST:-django_app}:8000/api/ingest/message/
       - INGEST_TOKEN=${DJANGO_SECRET_KEY}
     depends_on:
       - postgres

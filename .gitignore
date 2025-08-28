@@ -5,4 +5,7 @@ env/
 # macOS Finder metadata
 .DS_Store
 
+# Example environment file
+env.example
+
 
