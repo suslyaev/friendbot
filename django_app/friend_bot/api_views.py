@@ -322,7 +322,7 @@ class StatisticsView(APIView):
                     f"   📈 Рейтинг: {user_in_group.rating}\n"
                     f"   💬 Сообщений: {user_in_group.message_count}\n"
                     f"   🔥 Непрерывных дней: {consecutive_days}\n"
-                    f"   ⏰ Последняя активность: {last_activity_str}\n\n"
+                    f"   ⏰ Был активен: {last_activity_str}\n\n"
                 )
             
             print(f"🔍 Статистика сформирована, длина: {len(stat_text)} символов")
