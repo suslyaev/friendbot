@@ -293,12 +293,22 @@ class StatisticsView(APIView):
                 except DailyCheckin.DoesNotExist:
                     consecutive_days = 0
                 
+                # Форматируем дату последней активности
+                if user_in_group.last_activity:
+                    import pytz
+                    moscow_tz = pytz.timezone('Europe/Moscow')
+                    last_activity_local = user_in_group.last_activity.astimezone(moscow_tz)
+                    last_activity_str = last_activity_local.strftime('%d.%m.%Y %H:%M')
+                else:
+                    last_activity_str = "нет данных"
+                
                 stat_text += (
                     f"{i}. <b>{username}</b>\n"
                     f"   🏆 {rank_name}\n"
                     f"   📈 Рейтинг: {user_in_group.rating}\n"
                     f"   💬 Сообщений: {user_in_group.message_count}\n"
-                    f"   🔥 Непрерывных дней: {consecutive_days}\n\n"
+                    f"   🔥 Непрерывных дней: {consecutive_days}\n"
+                    f"   ⏰ Последняя активность: {last_activity_str}\n\n"
                 )
             
             print(f"🔍 Статистика сформирована, длина: {len(stat_text)} символов")
