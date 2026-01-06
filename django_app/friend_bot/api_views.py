@@ -293,11 +293,17 @@ class StatisticsView(APIView):
                 except DailyCheckin.DoesNotExist:
                     consecutive_days = 0
                 
+                # Получаем дату последнего сообщения пользователя
+                last_message = Message.objects.filter(
+                    user=user_in_group.user,
+                    chat=group
+                ).order_by('-date').first()
+                
                 # Форматируем дату последней активности
-                if user_in_group.last_activity:
+                if last_message and last_message.date:
                     import pytz
                     moscow_tz = pytz.timezone('Europe/Moscow')
-                    last_activity_local = user_in_group.last_activity.astimezone(moscow_tz)
+                    last_activity_local = last_message.date.astimezone(moscow_tz)
                     last_activity_str = last_activity_local.strftime('%d.%m.%Y %H:%M')
                 else:
                     last_activity_str = "нет данных"

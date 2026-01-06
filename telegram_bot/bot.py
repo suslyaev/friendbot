@@ -367,17 +367,19 @@ async def stat_command(message: Message):
                             uig.rating,
                             uig.message_count,
                             uig.coefficient,
-                            uig.last_activity,
+                            MAX(m.date) as last_activity,
                             r.name as rank_name,
                             COALESCE(dc.consecutive_days, 0) as consecutive_days
                         FROM friend_bot_useringroup uig
                         JOIN friend_bot_user u ON uig.user_id = u.id
                         LEFT JOIN friend_bot_rank r ON uig.rank_id = r.id
                         LEFT JOIN friend_bot_dailycheckin dc ON dc.user_id = u.id AND dc.group_id = uig.group_id
+                        LEFT JOIN friend_bot_message m ON m.user_id = u.id AND m.chat_id = uig.group_id
                         WHERE uig.group_id = (
                             SELECT id FROM friend_bot_telegramgroup WHERE telegram_id = $1
                         )
                         AND uig.is_active = true
+                        GROUP BY u.id, u.first_name, u.username, uig.rating, uig.message_count, uig.coefficient, r.name, dc.consecutive_days
                         ORDER BY uig.rating DESC
                     """, message.chat.id)
                     
