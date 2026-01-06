@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import Message, ChatType
@@ -404,22 +404,27 @@ async def stat_command(message: Message):
                         # Форматируем дату последней активности (московское время)
                         if last_activity:
                             try:
-                                from datetime import timedelta
                                 # asyncpg возвращает datetime объекты, которые могут быть naive или aware
                                 if isinstance(last_activity, datetime):
+                                    logger.debug(f"DEBUG: Исходная дата для {username}: {last_activity}, tzinfo: {last_activity.tzinfo}")
+                                    
                                     # Если дата без timezone, предполагаем что это UTC (стандарт для PostgreSQL)
                                     if last_activity.tzinfo is None:
                                         utc_tz = pytz.UTC
                                         last_activity = utc_tz.localize(last_activity)
+                                        logger.debug(f"DEBUG: Локализовали в UTC: {last_activity}")
                                     else:
                                         # Если timezone уже есть, убеждаемся что это UTC (конвертируем если нужно)
                                         if last_activity.tzinfo != pytz.UTC:
                                             # Конвертируем в UTC сначала, если это другой timezone
                                             last_activity = last_activity.astimezone(pytz.UTC)
+                                            logger.debug(f"DEBUG: Конвертировали в UTC: {last_activity}")
                                     
                                     # Костыльное решение: добавляем 3 часа для московского времени (UTC+3)
                                     last_activity_moscow = last_activity + timedelta(hours=3)
+                                    logger.debug(f"DEBUG: После добавления 3 часов: {last_activity_moscow}")
                                     last_activity_str = last_activity_moscow.strftime('%d.%m.%Y %H:%M')
+                                    logger.debug(f"DEBUG: Итоговая строка для {username}: {last_activity_str}")
                                 else:
                                     # Если это не datetime объект, просто преобразуем в строку
                                     last_activity_str = str(last_activity)

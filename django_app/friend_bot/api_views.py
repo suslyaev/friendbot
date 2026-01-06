@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.conf import settings
 from friend_bot.models import User, TelegramGroup, UserInGroup, Message, DailyCheckin, MessageTypePoints, Rank
 from .serializers import IngestMessageSerializer
+from datetime import timedelta
 import os
 
 
@@ -301,19 +302,23 @@ class StatisticsView(APIView):
                 
                 # Форматируем дату последней активности (московское время)
                 if last_message and last_message.date:
-                    from datetime import timedelta
                     # Костыльное решение: добавляем 3 часа для московского времени
                     msg_date = last_message.date
+                    
+                    print(f"🔍 DEBUG: Исходная дата для {username}: {msg_date}, tzinfo: {msg_date.tzinfo}")
                     
                     # Убеждаемся, что дата aware (с timezone)
                     if msg_date.tzinfo is None:
                         # Если naive, делаем aware в UTC (стандарт Django)
                         import pytz
                         msg_date = pytz.UTC.localize(msg_date)
+                        print(f"🔍 DEBUG: Локализовали в UTC: {msg_date}")
                     
                     # Добавляем 3 часа для московского времени (UTC+3)
                     msg_date_moscow = msg_date + timedelta(hours=3)
+                    print(f"🔍 DEBUG: После добавления 3 часов: {msg_date_moscow}")
                     last_activity_str = msg_date_moscow.strftime('%d.%m.%Y %H:%M')
+                    print(f"🔍 DEBUG: Итоговая строка для {username}: {last_activity_str}")
                 else:
                     last_activity_str = "нет данных"
                 
