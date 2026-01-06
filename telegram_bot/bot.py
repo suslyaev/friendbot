@@ -404,6 +404,7 @@ async def stat_command(message: Message):
                         # Форматируем дату последней активности (московское время)
                         if last_activity:
                             try:
+                                from datetime import timedelta
                                 # asyncpg возвращает datetime объекты, которые могут быть naive или aware
                                 if isinstance(last_activity, datetime):
                                     # Если дата без timezone, предполагаем что это UTC (стандарт для PostgreSQL)
@@ -416,9 +417,9 @@ async def stat_command(message: Message):
                                             # Конвертируем в UTC сначала, если это другой timezone
                                             last_activity = last_activity.astimezone(pytz.UTC)
                                     
-                                    # Конвертируем из UTC в московское время
-                                    last_activity_local = last_activity.astimezone(moscow_tz)
-                                    last_activity_str = last_activity_local.strftime('%d.%m.%Y %H:%M')
+                                    # Костыльное решение: добавляем 3 часа для московского времени (UTC+3)
+                                    last_activity_moscow = last_activity + timedelta(hours=3)
+                                    last_activity_str = last_activity_moscow.strftime('%d.%m.%Y %H:%M')
                                 else:
                                     # Если это не datetime объект, просто преобразуем в строку
                                     last_activity_str = str(last_activity)
