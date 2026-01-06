@@ -301,17 +301,20 @@ class StatisticsView(APIView):
                 
                 # Форматируем дату последней активности (московское время)
                 if last_message and last_message.date:
-                    import pytz
-                    moscow_tz = pytz.timezone('Europe/Moscow')
+                    # Django хранит даты в UTC в БД, но возвращает aware datetime
+                    # Используем timezone.localtime() для конвертации в локальный timezone (Москва)
+                    # Это учитывает настройки TIME_ZONE из settings.py
                     msg_date = last_message.date
                     
-                    # Если дата без timezone, предполагаем что это UTC (стандарт для Django)
+                    # Убеждаемся, что дата aware (с timezone)
                     if msg_date.tzinfo is None:
-                        utc_tz = pytz.UTC
-                        msg_date = utc_tz.localize(msg_date)
+                        # Если naive, делаем aware в UTC (стандарт Django)
+                        import pytz
+                        msg_date = pytz.UTC.localize(msg_date)
                     
-                    # Конвертируем в московское время
-                    last_activity_local = msg_date.astimezone(moscow_tz)
+                    # Конвертируем в московское время используя Django timezone.localtime()
+                    # Это автоматически учитывает TIME_ZONE = 'Europe/Moscow' из settings
+                    last_activity_local = timezone.localtime(msg_date)
                     last_activity_str = last_activity_local.strftime('%d.%m.%Y %H:%M')
                 else:
                     last_activity_str = "нет данных"
