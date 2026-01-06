@@ -359,7 +359,7 @@ async def stat_command(message: Message):
                 try:
                     logger.info(f"Подключение к БД установлено, ищем группу с telegram_id: {message.chat.id}")
                     
-                    # Получаем топ-10 пользователей по рейтингу
+                    # Получаем всех пользователей по рейтингу
                     rows = await conn.fetch("""
                         SELECT 
                             u.first_name,
@@ -377,8 +377,8 @@ async def stat_command(message: Message):
                         WHERE uig.group_id = (
                             SELECT id FROM friend_bot_telegramgroup WHERE telegram_id = $1
                         )
+                        AND uig.is_active = true
                         ORDER BY uig.rating DESC
-                        LIMIT 10
                     """, message.chat.id)
                     
                     logger.info(f"Найдено пользователей в группе: {len(rows)}")
@@ -388,7 +388,9 @@ async def stat_command(message: Message):
                         return
                     
                     # Формируем сообщение со статистикой
-                    stat_text = "📊 <b>Топ-10 пользователей по рейтингу:</b>\n\n"
+                    stat_text = "📊 <b>Статистика пользователей в группе:</b>\n\n"
+                    
+                    moscow_tz = pytz.timezone('Europe/Moscow')
                     
                     for i, row in enumerate(rows, 1):
                         username = f"@{row['username']}" if row['username'] else row['first_name']
@@ -400,15 +402,27 @@ async def stat_command(message: Message):
                         # Форматируем дату последней активности (московское время)
                         if last_activity:
                             try:
-                                moscow_tz = pytz.timezone('Europe/Moscow')
-                                if last_activity.tzinfo is None:
-                                    last_activity = last_activity.replace(tzinfo=moscow_tz)
-                                last_activity_local = last_activity.astimezone(moscow_tz)
-                                last_activity_str = last_activity_local.strftime('%d.%m.%Y %H:%M')
-                            except Exception:
-                                last_activity_str = str(last_activity)
+                                # asyncpg возвращает datetime объекты, которые могут быть naive или aware
+                                if isinstance(last_activity, datetime):
+                                    # Если дата без timezone, предполагаем что это UTC (стандарт для PostgreSQL)
+                                    if last_activity.tzinfo is None:
+                                        utc_tz = pytz.UTC
+                                        last_activity = utc_tz.localize(last_activity)
+                                    
+                                    # Конвертируем в московское время
+                                    last_activity_local = last_activity.astimezone(moscow_tz)
+                                    last_activity_str = last_activity_local.strftime('%d.%m.%Y %H:%M')
+                                else:
+                                    # Если это не datetime объект, просто преобразуем в строку
+                                    last_activity_str = str(last_activity)
+                            except Exception as e:
+                                logger.error(f"Ошибка форматирования даты для пользователя {username}: {e}, raw: {last_activity}, type: {type(last_activity)}")
+                                last_activity_str = str(last_activity) if last_activity else "нет данных"
                         else:
                             last_activity_str = "нет данных"
+                        
+                        # Логируем для отладки (можно убрать после проверки)
+                        logger.debug(f"Пользователь {username}: last_activity={last_activity}, formatted={last_activity_str}")
                         
                         stat_text += (
                             f"{i}. <b>{username}</b>\n"
