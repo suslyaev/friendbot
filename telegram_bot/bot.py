@@ -367,6 +367,7 @@ async def stat_command(message: Message):
                             uig.rating,
                             uig.message_count,
                             uig.coefficient,
+                            uig.last_activity,
                             r.name as rank_name
                         FROM friend_bot_useringroup uig
                         JOIN friend_bot_user u ON uig.user_id = u.id
@@ -391,13 +392,28 @@ async def stat_command(message: Message):
                         username = f"@{row['username']}" if row['username'] else row['first_name']
                         rank_name = row['rank_name'] if row['rank_name'] else "Нет звания"
                         coefficient = f"{row['coefficient']:.1f}x"
+                        last_activity = row['last_activity']
+
+                        # Форматируем дату последней активности (московское время)
+                        if last_activity:
+                            try:
+                                moscow_tz = pytz.timezone('Europe/Moscow')
+                                if last_activity.tzinfo is None:
+                                    last_activity = last_activity.replace(tzinfo=moscow_tz)
+                                last_activity_local = last_activity.astimezone(moscow_tz)
+                                last_activity_str = last_activity_local.strftime('%d.%m.%Y %H:%M')
+                            except Exception:
+                                last_activity_str = str(last_activity)
+                        else:
+                            last_activity_str = "нет данных"
                         
                         stat_text += (
                             f"{i}. <b>{username}</b>\n"
                             f"   🏆 {rank_name}\n"
                             f"   📈 Рейтинг: {row['rating']}\n"
                             f"   💬 Сообщений: {row['message_count']}\n"
-                            f"   ⚡ Коэффициент: {coefficient}\n\n"
+                            f"   ⚡ Коэффициент: {coefficient}\n"
+                            f"   ⏰ Последняя активность: {last_activity_str}\n\n"
                         )
                     
                     # Добавляем общую статистику группы
