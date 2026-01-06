@@ -410,8 +410,13 @@ async def stat_command(message: Message):
                                     if last_activity.tzinfo is None:
                                         utc_tz = pytz.UTC
                                         last_activity = utc_tz.localize(last_activity)
+                                    else:
+                                        # Если timezone уже есть, убеждаемся что это UTC (конвертируем если нужно)
+                                        if last_activity.tzinfo != pytz.UTC:
+                                            # Конвертируем в UTC сначала, если это другой timezone
+                                            last_activity = last_activity.astimezone(pytz.UTC)
                                     
-                                    # Конвертируем в московское время
+                                    # Конвертируем из UTC в московское время
                                     last_activity_local = last_activity.astimezone(moscow_tz)
                                     last_activity_str = last_activity_local.strftime('%d.%m.%Y %H:%M')
                                 else:
@@ -422,9 +427,6 @@ async def stat_command(message: Message):
                                 last_activity_str = str(last_activity) if last_activity else "нет данных"
                         else:
                             last_activity_str = "нет данных"
-                        
-                        # Логируем для отладки (можно убрать после проверки)
-                        logger.debug(f"Пользователь {username}: last_activity={last_activity}, formatted={last_activity_str}")
                         
                         stat_text += (
                             f"{i}. <b>{username}</b>\n"

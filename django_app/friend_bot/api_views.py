@@ -299,11 +299,19 @@ class StatisticsView(APIView):
                     chat=group
                 ).order_by('-date').first()
                 
-                # Форматируем дату последней активности
+                # Форматируем дату последней активности (московское время)
                 if last_message and last_message.date:
                     import pytz
                     moscow_tz = pytz.timezone('Europe/Moscow')
-                    last_activity_local = last_message.date.astimezone(moscow_tz)
+                    msg_date = last_message.date
+                    
+                    # Если дата без timezone, предполагаем что это UTC (стандарт для Django)
+                    if msg_date.tzinfo is None:
+                        utc_tz = pytz.UTC
+                        msg_date = utc_tz.localize(msg_date)
+                    
+                    # Конвертируем в московское время
+                    last_activity_local = msg_date.astimezone(moscow_tz)
                     last_activity_str = last_activity_local.strftime('%d.%m.%Y %H:%M')
                 else:
                     last_activity_str = "нет данных"
